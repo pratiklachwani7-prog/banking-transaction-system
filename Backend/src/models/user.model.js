@@ -32,7 +32,7 @@ userSchema.pre("save" , async function() {
     this.password = hash ;
 
     return  ;
-}  )
+}  ) ;
 
 userSchema.methods.comparePassword = async function(password) {
     // console.log(password,this.password);

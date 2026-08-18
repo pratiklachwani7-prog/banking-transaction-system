@@ -1,5 +1,8 @@
 const userModel = require("../models/user.model") ;
 const jwt = require("jsonwebtoken") ;
+const emailService = require("../services/email.service")
+
+
 /**
 * - User Register Controller 
 * - POST /api/auth/register
@@ -8,10 +11,10 @@ const jwt = require("jsonwebtoken") ;
 async function userRegisterController(req,res)
 {
     const {email,password,name} = req.body ;
-    function isExist() {  userModel.findOne({
-        email:email
-    }) }
-    if ( isExist() ) 
+    
+    const existingUser = await userModel.findOne({email}) ;
+
+    if ( existingUser ) 
     {
         return res.status(422).json({
             message:"User Already Exist with Email." ,
@@ -31,6 +34,8 @@ async function userRegisterController(req,res)
         },
         token
     })
+
+    await emailService.sendRegisterEmail(user.email , user.name) ;
 }
 
 /**
@@ -68,6 +73,8 @@ async function userLoginController(req,res)
         },
         token
     })
+
+    await emailService.sendRegisterEmail(user.email , user.name) ;
 }
 
 module.exports = {
