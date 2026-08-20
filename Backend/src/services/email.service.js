@@ -96,7 +96,7 @@ async function sendLoginEmail(userEmail, name)
         Founder`;
 
     const html = `
-        <h2>New Login to Your Bank Account</h2>
+        <h2>New Login to Your Bank Account Hiiiiiii How are you</h2>
         <p>Hi ${name},</p>
         <p>
             You have successfully logged in to your Bank System account.
@@ -119,4 +119,5 @@ async function sendLoginEmail(userEmail, name)
 module.exports = {
     sendRegisterEmail,
     sendLoginEmail
+
 };
