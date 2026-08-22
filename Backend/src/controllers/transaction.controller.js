@@ -2,6 +2,7 @@ const transactionModel = require("../models/transaction.model") ;
 const ledgerModel = require("../models/ledger.model") ;
 const emailService = require("../services/email.service") ;
 const accountModel = require("../models/account.model") ;
+const mongoose = require("mongoose") ;
 
 /**
  * - Create a new transaction 
@@ -98,6 +99,59 @@ async function createTransaction(req , res)
             message:`Insufficient Balance . Current Balance is ${balance} and requested is ${amount} ` ,
         }) ;
     }
+
+    /**
+     * 5. Create transaction (PENDING) 
+     */
+
+    const session = await mongoose.startSession() ;
+    session.startTransaction() ;
+
+    //Now the step 5 , 6 , 7 , 8 , 9 should be executed Sequentially and together ,, if any error commited in between we will revert the step back to 5 
+
+    //, so startSeesion does that Things Only , 
+
+    const transaction = await transactionModel.create({
+        fromAccount , 
+        toAccount , 
+        amount , 
+        idempotencyKey ,
+        status : "PENDING"  
+    } , {session} ) ;
+
+    const debitLedgerEntry = await ledgerModel.create({
+        account:fromAccount , 
+        amount : amount ,
+        transaction : transaction._id ,
+        type:"DEBIT" , 
+    } , {session} ) ;
+
+    const creditLedgerEntry = await ledgerModel.create({
+        account : toAccount ,
+        amount : amount ,
+        transaction : transaction._id ,
+        type : "CREDIT" ,
+    } , {session} ) ;
+
+    transaction.status = "COMPLETED" ;
+    await transaction.save({session}) ;
+
+    await session.commitTransaction() ;
+    session.endSession() ;
+
+    /**
+     * 10. Send Notification 
+     */
+
+    await emailService.sendTransactionEmail( req.user.email , req.user.name , amount , toAccount ) ;
+    return res.status(201).json({
+        message:"Transaction completed Successfully" ,
+        transaction:transaction ,
+    })
+
+
+
+
 
 
 
