@@ -219,6 +219,8 @@ async function sendLoginEmail(userEmail, name)
 
 module.exports = {
     sendRegisterEmail,
-    sendLoginEmail
+    sendLoginEmail,
+    sendTransactionEmail ,
+    sendTransactionFailureEmail,
 
 };

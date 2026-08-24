@@ -10,7 +10,7 @@ const ledgerSchema = new mongoose.Schema( {
         immutable:true ,
     } ,
     amount : {
-        type : number ,
+        type : Number ,
         ref:"transaction",
         required:[true,"Amount is required for creating a ledge entry"] ,
         index:true ,
