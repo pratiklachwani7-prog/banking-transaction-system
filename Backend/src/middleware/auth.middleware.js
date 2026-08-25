@@ -61,6 +61,7 @@ async function authSystemUserMiddleware( req , res , next )
     {
         return res.status(401).json({
             message:"Unauthorized access , token is invalid"  ,
+            error : err
         })
 
     }

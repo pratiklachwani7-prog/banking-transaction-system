@@ -187,28 +187,28 @@ async function createInitialFundsTransaction( req , res )
 
     const session = await mongoose.startSession() ;
     
-    const transaction = await transactionModel.create({
+    const transaction = await transactionModel.create([{
         fromAccount : fromUserAccount._id ,
         toAccount ,
         amount , 
         idempotencyKey ,
         status : "PENDING" ,
 
-    } , {session} )  ;
+    } ], {session} )  ;
 
-    const debitLedgerEntry = await ledgerModel.create({
+    const debitLedgerEntry = await ledgerModel.create([{
         account: fromUserAccount._id , 
         amount : amount , 
         transaction : transaction_.id ,
         type: "DEBIT" ,
-    } , { session } ) ;
+    } ], { session } ) ;
 
-    const creditLedgerEntry = await ledgerModel.create({
+    const creditLedgerEntry = await ledgerModel.create([{
         account: toAccount , 
         amount : amount , 
         transaction : transaction_.id ,
         type: "CREDIT" ,
-    } , { session } ) ;
+    } ], { session } ) ;
 
     transaction.status = "COMPLETED" ;
     await transaction.save( {session} )   
