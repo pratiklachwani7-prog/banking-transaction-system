@@ -42,33 +42,39 @@ accountSchema.methods.getBalance = async function()
             {
                 $sum:
                 {
-                    $where:
+                    $cond:
                     [
-                        { $eq : [ "$TYPE" , "DEBIT" ] } ,
+                        { $eq : [ "$type" , "DEBIT" ] } ,
                         "$amount" ,
                         0
                     ]
                 }
             },
-            totalCredits:
+            totalCredit:
             {
                 $sum:
                 {
-                    $where:
+                    $cond:
                     [
-                        { $eq : [ "$TYPE" , "CREDIT" ] } ,
+                        { $eq : [ "$type" , "CREDIT" ] } ,
                         "$amount",
                         0
                     ]
                 }
             }
-        } ,
-        $project:
-        {
-            _id:0,
-            balance : { $substract : [ "$totalCredit" , "$totalDebit" ] }
         }
-    }
+    } ,
+        {
+            $project:
+                {
+                    _id:0,
+                    balance : 
+                    { 
+                        $subtract : [ "$totalCredit" , "$totalDebit" ] 
+
+                    }
+                }
+        }
     ]) ;
     //This is called aggregation pipeline used to run a custom query especially in mongoDB
 
