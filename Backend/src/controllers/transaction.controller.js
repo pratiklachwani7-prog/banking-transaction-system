@@ -2,6 +2,7 @@ const transactionModel = require("../models/transaction.model") ;
 const ledgerModel = require("../models/ledger.model") ;
 const emailService = require("../services/email.service") ;
 const accountModel = require("../models/account.model") ;
+const userModel = require("../models/user.model") ;
 const mongoose = require("mongoose") ;
 
 /**
@@ -166,6 +167,16 @@ async function createInitialFundsTransaction( req , res )
         _id : toAccount ,
     } )
 
+     const systemUser = await userModel.findOne({
+        systemUser: true,
+    });
+
+    if (!systemUser) {
+        return res.status(400).json({
+            message: "System User not found",
+        });
+    }
+
     if ( !toUserAccount )
     {
         return res.status(400).json({
@@ -174,7 +185,6 @@ async function createInitialFundsTransaction( req , res )
     }
 
     const fromUserAccount = await accountModel.findOne({
-        systemUser : true ,
         user : req.user._id ,
     })
 
@@ -199,7 +209,7 @@ async function createInitialFundsTransaction( req , res )
     const debitLedgerEntry = await ledgerModel.create([{
         account: fromUserAccount._id , 
         amount : amount , 
-        transaction : transaction_.id ,
+        transaction : transaction.id ,
         type: "DEBIT" ,
     } ], { session } ) ;
 
@@ -210,8 +220,8 @@ async function createInitialFundsTransaction( req , res )
         type: "CREDIT" ,
     } ], { session } ) ;
 
-    transaction.status = "COMPLETED" ;
-    await transaction.save( {session} )   
+    transaction[0].status = "COMPLETED" ;
+    await transaction[0].save( {session} )   
     
     await session.commitTransaction() ;
     session.endSession() ;
