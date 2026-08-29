@@ -112,27 +112,27 @@ async function createTransaction(req , res)
 
     //, so startSeesion does that Things Only , 
 
-    const transaction = await transactionModel.create({
+    const [transaction] = await transactionModel.create([{
         fromAccount , 
         toAccount , 
         amount , 
         idempotencyKey ,
         status : "PENDING"  
-    } , {session} ) ;
+    }] , {session} ) ;
 
-    const debitLedgerEntry = await ledgerModel.create({
+    const debitLedgerEntry = await ledgerModel.create([{
         account:fromAccount , 
         amount : amount ,
         transaction : transaction._id ,
         type:"DEBIT" , 
-    } , {session} ) ;
+    }] , {session} ) ;
 
-    const creditLedgerEntry = await ledgerModel.create({
+    const creditLedgerEntry = await ledgerModel.create([{
         account : toAccount ,
         amount : amount ,
         transaction : transaction._id ,
         type : "CREDIT" ,
-    } , {session} ) ;
+    }] , {session} ) ;
 
     transaction.status = "COMPLETED" ;
     await transaction.save({session}) ;
@@ -199,11 +199,6 @@ async function createInitialFundsTransaction( req , res )
 
     session.startTransaction() ;
     
-    console.log("FROM ACCOUNT:", fromUserAccount);
-console.log("TO ACCOUNT:", toAccount);
-console.log("AMOUNT:", amount);
-console.log("IDEMPOTENCY KEY:", idempotencyKey);
-
     const [transaction] = await transactionModel.create([{
         fromAccount : fromUserAccount._id ,
         toAccount ,
