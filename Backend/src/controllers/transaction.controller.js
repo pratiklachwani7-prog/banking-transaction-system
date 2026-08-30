@@ -101,54 +101,68 @@ async function createTransaction(req , res)
         }) ;
     }
 
-    /**
-     * 5. Create transaction (PENDING) 
-     */
+    try
+    {
+            /**
+             * 5. Create transaction (PENDING) 
+             */
+        
+            const session = await mongoose.startSession() ;
+            session.startTransaction() ;
+        
+            //Now the step 5 , 6 , 7 , 8 , 9 should be executed Sequentially and together ,, if any error commited in between we will revert the step back to 5 
+        
+            //, so startSeesion does that Things Only , 
+        
+            const [transaction] = await transactionModel.create([{
+                fromAccount , 
+                toAccount , 
+                amount , 
+                idempotencyKey ,
+                status : "PENDING"  
+            }] , {session} ) ;
+        
+            const debitLedgerEntry = await ledgerModel.create([{
+                account:fromAccount , 
+                amount : amount ,
+                transaction : transaction._id ,
+                type:"DEBIT" , 
+            }] , {session} ) ;
+        
+            await (()=>{
+                return new Promise( (resolve) => setTimeout(resolve,15 * 1000) ) ; 
+            })()
+        
+            const creditLedgerEntry = await ledgerModel.create([{
+                account : toAccount ,
+                amount : amount ,
+                transaction : transaction._id ,
+                type : "CREDIT" ,
+            }] , {session} ) ;
+        
+            transaction.status = "COMPLETED" ;
+            await transaction.save({session}) ;
+        
+            await session.commitTransaction() ;
+            session.endSession() ;
+            /**
+             * 10. Send Notification 
+             */
+        
+            await emailService.sendTransactionEmail( req.user.email , req.user.name , amount , toAccount ) ;
+            return res.status(201).json({
+                message:"Transaction completed Successfully" ,
+                transaction:transaction ,
+            })
+    }
+    catch(error)
+    {
+        return res.status(400).json({
+            message:"Transaction is Pending due to some Issue , please retry after some time",
+            error
+        })
+    }
 
-    const session = await mongoose.startSession() ;
-    session.startTransaction() ;
-
-    //Now the step 5 , 6 , 7 , 8 , 9 should be executed Sequentially and together ,, if any error commited in between we will revert the step back to 5 
-
-    //, so startSeesion does that Things Only , 
-
-    const [transaction] = await transactionModel.create([{
-        fromAccount , 
-        toAccount , 
-        amount , 
-        idempotencyKey ,
-        status : "PENDING"  
-    }] , {session} ) ;
-
-    const debitLedgerEntry = await ledgerModel.create([{
-        account:fromAccount , 
-        amount : amount ,
-        transaction : transaction._id ,
-        type:"DEBIT" , 
-    }] , {session} ) ;
-
-    const creditLedgerEntry = await ledgerModel.create([{
-        account : toAccount ,
-        amount : amount ,
-        transaction : transaction._id ,
-        type : "CREDIT" ,
-    }] , {session} ) ;
-
-    transaction.status = "COMPLETED" ;
-    await transaction.save({session}) ;
-
-    await session.commitTransaction() ;
-    session.endSession() ;
-
-    /**
-     * 10. Send Notification 
-     */
-
-    await emailService.sendTransactionEmail( req.user.email , req.user.name , amount , toAccount ) ;
-    return res.status(201).json({
-        message:"Transaction completed Successfully" ,
-        transaction:transaction ,
-    })
 
 }
 
